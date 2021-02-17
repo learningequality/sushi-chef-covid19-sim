@@ -74,7 +74,7 @@ class Covid19SimChef(SushiChef):
         # scrape same domain links one level deep
         link_policy = {'policy': 'scrape', 'scope': 'same_domain', 'levels': 1}
         if not 'English' in self.data or not os.path.exists(self.data['English']['index_path']):
-            self.data['English'] = self.client.get_page(ROOT_URL, link_policy=link_policy, relative_links=True)
+            self.data['English'] = self.client.get_page(ROOT_URL, link_policy=link_policy)
 
         # The links to the translated versions are contained in the English index page, so we have to
         # parse it to retrieve them
@@ -95,7 +95,7 @@ class Covid19SimChef(SushiChef):
                     url = link['href']
                     if not url.endswith('/'):
                         url += '/'
-                    self.data[lang] = self.client.get_page(url, link_policy=link_policy, relative_links=True)
+                    self.data[lang] = self.client.get_page(url, link_policy=link_policy)
 
                     LOGGER.debug("lang: {}, url: {}".format(lang, url))
         else:
