@@ -33,18 +33,6 @@ ROOT_URL = "https://ncase.me/covid-19/"
 # The chef subclass
 ################################################################################
 class Covid19SimChef(SushiChef):
-    """
-    This class converts content from the content source into the format required by Kolibri,
-    then uploads the {channel_name} channel to Kolibri Studio.
-    Your command line script should call the `main` method as the entry point,
-    which performs the following steps:
-      - Parse command line arguments and options (run `./sushichef.py -h` for details)
-      - Call the `SushiChef.run` method which in turn calls `pre_run` (optional)
-        and then the ricecooker function `uploadchannel` which in turn calls this
-        class' `get_channel` method to get channel info, then `construct_channel`
-        to build the contentnode tree.
-    For more info, see https://ricecooker.readthedocs.io
-    """
     channel_info = {
         'CHANNEL_SOURCE_DOMAIN': CHANNEL_DOMAIN,
         'CHANNEL_SOURCE_ID': CHANNEL_SOURCE_ID,
@@ -58,10 +46,6 @@ class Covid19SimChef(SushiChef):
     DOWNLOADS_DIR = os.path.join(DATA_DIR, 'downloads')
     ARCHIVE_DIR = os.path.join(DOWNLOADS_DIR, 'archive_{}'.format(CONTENT_ARCHIVE_VERSION))
     ARCHIVE_DATA = os.path.join(ARCHIVE_DIR, 'downloads.json')
-    # Your chef subclass can override/extend the following method:
-    # get_channel: to create ChannelNode manually instead of using channel_info
-    # pre_run: to perform preliminary tasks, e.g., crawling and scraping website
-    # __init__: if need to customize functionality or add command line arguments
 
     def download_content(self):
         LOGGER.info("Calling download_content")
@@ -105,15 +89,6 @@ class Covid19SimChef(SushiChef):
             json.dump(self.data, f, indent=4)
 
     def construct_channel(self, *args, **kwargs):
-        """
-        Creates ChannelNode and build topic tree
-        Args:
-          - args: arguments passed in on the command line
-          - kwargs: extra options passed in as key="value" pairs on the command line
-            For example, add the command line option   lang="fr"  and the value
-            "fr" will be passed along to `construct_channel` as kwargs['lang'].
-        Returns: ChannelNode
-        """
         channel = self.get_channel(*args, **kwargs)  # Create ChannelNode from data in self.channel_info
 
         lang_names = list(self.data.keys())
@@ -123,10 +98,6 @@ class Covid19SimChef(SushiChef):
             lang_data = self.data[lang_name]
             LOGGER.info("Creating app for language: {}".format(lang_name))
             lang = languages.getlang_by_native_name(lang_name)
-            if lang:
-                LOGGER.info("Language: {}".format(lang))
-            else:
-                LOGGER.warning("Unable to find language for {}".format(lang_name))
 
             zip_dir = self.client.create_zip_dir_for_page(lang_data['url'])
 
@@ -140,20 +111,6 @@ class Covid19SimChef(SushiChef):
             # Grab the localized title
             title = soup.find('span', {'id': 'share_title'}).text
 
-            # There is an issue with Kolibri's HTML5 zip support where it doesn't auto-append index.html
-            # to URLs that point to the sim subdirectory, so here we add it explicitly.
-            links = soup.find_all('iframe')
-            # for link in links:
-            #     src_attr = 'src'
-            #     if link.has_attr('data-src') and not link.has_attr('src'):
-            #         src_attr='data-src'
-            #         if 'sim?' in link[src_attr]:
-            #         # print("Found link {}".format(link[src_attr]))
-            #             link[src_attr] = link[src_attr].replace('sim?', 'sim/index.html?')
-            #             print# ("Link is now {}".format(link[src_attr]))
-                # else:
-                #     print("Not replacing link {}".format(link[src_attr]))
-
             # Save the modified index.html page
             thumbnail = None
             for resource in lang_data['resources']:
@@ -165,7 +122,7 @@ class Covid19SimChef(SushiChef):
                 f.write(soup.prettify(encoding='utf-8'))
 
             # create_predictable_zip ensures that the ZIP file does not change each time it's created. This
-            # ensures that the zip doesn't get re-downloaded just because zip metadata changed.
+            # ensures that the zip doesn't get re-uploaded just because zip metadata changed.
             zip_file = zip.create_predictable_zip(zip_dir)
             zip_name = lang.primary_code if lang else lang_name
             zip_filename = os.path.join(self.ZIP_DIR, "{}.zip".format(zip_name))
